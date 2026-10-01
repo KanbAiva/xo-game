@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>لعبة XO</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+  body {
+    background: #0f172a;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    touch-action: manipulation;
+  }
+  h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, #38bdf8, #818cf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .status {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: #94a3b8;
+    height: 30px;
+  }
+  .board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    width: 100%;
+    max-width: 320px;
+    aspect-ratio: 1;
+    margin-bottom: 25px;
+  }
+  .cell {
+    background: #1e293b;
+    border: 2px solid #334155;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.8rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+  }
+  .cell:active { transform: scale(0.95); }
+  .cell.x { color: #38bdf8; text-shadow: 0 0 15px rgba(56, 189, 248, 0.5); }
+  .cell.o { color: #f43f5e; text-shadow: 0 0 15px rgba(244, 63, 94, 0.5); }
+  
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 320px;
+  }
+  .btn {
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn-restart { background: #334155; color: #fff; }
+  .btn-share { background: #25d366; color: #fff; display: none; }
+  .btn:active { opacity: 0.8; }
+</style>
+</head>
+<body>
+
+  <h1>لعبة X O</h1>
+  <div class="status" id="status">دور اللاعب: X</div>
+
+  <div class="board" id="board">
+    <div class="cell" data-index="0"></div>
+    <div class="cell" data-index="1"></div>
+    <div class="cell" data-index="2"></div>
+    <div class="cell" data-index="3"></div>
+    <div class="cell" data-index="4"></div>
+    <div class="cell" data-index="5"></div>
+    <div class="cell" data-index="6"></div>
+    <div class="cell" data-index="7"></div>
+    <div class="cell" data-index="8"></div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-restart" id="restartBtn">إعادة اللعب 🔄</button>
+    <button class="btn btn-share" id="shareBtn">إرسال النتيجة للبوت 📲</button>
+  </div>
+
+<script>
+  const board = document.getElementById('board');
+  const cells = document.querySelectorAll('.cell');
+  const statusTxt = document.getElementById('status');
+  const restartBtn = document.getElementById('restartBtn');
+  const shareBtn = document.getElementById('shareBtn');
+
+  let options = ["", "", "", "", "", "", "", "", ""];
+  let currentPlayer = "X";
+  let running = true;
+  let winnerResult = "";
+
+  const winPatterns = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+    [0, 4, 8], [2, 4, 6]
+  ];
+
+  cells.forEach(cell => cell.addEventListener('click', cellClicked));
+  restartBtn.addEventListener('click', restartGame);
+
+  function cellClicked() {
+    const cellIndex = this.getAttribute('data-index');
+
+    if (options[cellIndex] !== "" || !running) return;
+
+    updateCell(this, cellIndex);
+    checkWinner();
+  }
+
+  function updateCell(cell, index) {
+    options[index] = currentPlayer;
+    cell.textContent = currentPlayer;
+    cell.classList.add(currentPlayer.toLowerCase());
+  }
+
+  function changePlayer() {
+    currentPlayer = (currentPlayer === "X") ? "O" : "X";
+    statusTxt.textContent = `دور اللاعب: ${currentPlayer}`;
+  }
+
+  function checkWinner() {
+    let roundWon = false;
+
+    for (let i = 0; i < winPatterns.length; i++) {
+      const condition = winPatterns[i];
+      const cellA = options[condition[0]];
+      const cellB = options[condition[1]];
+      const cellC = options[condition[2]];
+
+      if (cellA === "" || cellB === "" || cellC === "") continue;
+      if (cellA === cellB && cellB === cellC) {
+        roundWon = true;
+        break;
+      }
+    }
+
+    if (roundWon) {
+      statusTxt.textContent = `🎉 الفائز هو اللاعب (${currentPlayer})!`;
+      winnerResult = `الفائز هو ${currentPlayer}`;
+      running = false;
+      shareBtn.style.display = 'block';
+    } else if (!options.includes("")) {
+      statusTxt.textContent = `تعادل! 🤝`;
+      winnerResult = "تعادل بين الطرفين";
+      running = false;
+      shareBtn.style.display = 'block';
+    } else {
+      changePlayer();
+    }
+  }
+
+  function restartGame() {
+    currentPlayer = "X";
+    options = ["", "", "", "", "", "", "", "", ""];
+    statusTxt.textContent = `دور اللاعب: X`;
+    cells.forEach(cell => {
+      cell.textContent = "";
+      cell.classList.remove('x', 'o');
+    });
+    running = true;
+    shareBtn.style.display = 'none';
+  }
+
+  // إرسال النتيجة إلى الواتساب
+  shareBtn.addEventListener('click', () => {
+    // ⚠️ اكتب رقم بوت الواتساب هنا بدون علامة +
+    const botNumber = "972567575280"; 
+    const text = encodeURIComponent(`🎮 انتهت مباراة XO!\nالنتيجة: ${winnerResult}`);
+    window.location.href = `whatsapp://send?phone=${botNumber}&text=${text}`;
+  });
+</script>
+</body>
+</html>
